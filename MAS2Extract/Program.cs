@@ -24,11 +24,7 @@ namespace MAS2Extract
                 return;
             }
 
-            string target = "";
-            if (args.Length == 2)
-                target = args[1];
-            else
-                target = "./";
+            string target = (args.Length == 2) ? args[1] : "./";                
             bool unpack = true;
             if (target == "-s")
             {
@@ -48,27 +44,20 @@ namespace MAS2Extract
                 reader = new MAS2Reader(f);
                 Console.WriteLine(reader.Count + " files in archive");
 
-                Console.WriteLine(
-                    "+-----------------------------------------------------------------------------+");
-                Console.Write(PatchString("| Name", 38) + " | ");
-                Console.Write(PatchString("Compressed", 10) + " | ");
-                Console.Write(PatchString("Raw Size", 10) + " | ");
-                Console.Write(PatchString("Ratio", 10) + " |");
-                Console.WriteLine();
-                Console.WriteLine(
-                    "+-----------------------------------------------------------------------------+");
+                Console.WriteLine("+{0}+", new string('-', 77));
+                Console.WriteLine("| {0,-34} | {1,-10} | {2,-9} | {3,-6} | {4,-4} |",
+                    "Name", "Compressed", "Raw Size", "Ratio", "Type");
+                Console.WriteLine("+{0}+", new string('-', 77));
 
                 foreach(MAS2File file in reader.Files)
                 {
-                    double ratio = 1 - file.CompressedSize/file.UncompressedSize;
-                    Console.Write(PatchString("| "+file.Filename, 38) + " | ");
-                    Console.Write(PatchString(file.CompressedSize.ToString(), 10) + " | ");
-                    Console.Write(PatchString(file.UncompressedSize.ToString(), 10) + " | ");
-                    Console.Write(PatchString(Math.Round(100*ratio,1).ToString(), 10) + " |");
+                    double ratio = (file.UncompressedSize == 0) ? 0.0 : 1.0 - (double)file.CompressedSize / (double)file.UncompressedSize;
+                    Console.Write("| {0,-34} | {1,10} | {2,9} | {3,6:P1} | {4,4} |",
+                        LimitString(file.Filename, 34), file.CompressedSize, file.UncompressedSize, ratio, file.FileType);
                     try
                     {
                         if (unpack)
-                            reader.ExtractFile(file, Path.Combine(target + "\\", file.Filename));
+                            reader.ExtractFile(file, Path.Combine(target, file.Filename));
                     }catch(Exception ex)
                     {
                         Console.Write("FAIL");
@@ -87,17 +76,12 @@ namespace MAS2Extract
             }
         }
 
-        private static string PatchString(string name, int max_width)
+
+        private static string LimitString(string name, int max_width)
         {
-            if (name.Length > max_width)
-                return name.Substring(0, name.Length - 4) + "... ";
-            else
-            {
-                string patch = "";
-                for (int i = 0; i < max_width - name.Length; i++)
-                    patch += " ";
-                return name + patch;
-            }
+            if (name.Length <= max_width) return name;            
+            return name.Substring(0, max_width - 3) + "...";            
         }
+
     }
 }

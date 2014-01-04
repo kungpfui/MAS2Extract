@@ -15,8 +15,7 @@ namespace MAS2Extract
     {
         #region Deciphering information
         protected byte[] Salt;
-        protected uint Saltkey;
-        protected uint Saltkey2;
+        protected ulong Saltkey;        
 
         protected readonly byte[] FileTypeKeys = new byte[]
                              {
@@ -73,10 +72,10 @@ namespace MAS2Extract
             if (fileTypeString == "GMOTOR_MAS_2.90")
             {
                 Salt = Reader.ReadBytes(8);
-                Saltkey = BitConverter.ToUInt32(Salt, 0);
-                Saltkey2 = BitConverter.ToUInt32(Salt, 4);
-                if (Saltkey < 64) Saltkey += 64;
-                if (Saltkey2 < 64) Saltkey2 += 64;
+                Saltkey = BitConverter.ToUInt64(Salt, 0);
+                
+                if ((Saltkey & (0xFFFFFFFFul<<32)) < (0x40ul<<32)) Saltkey += 0x40ul<<32;
+		        if ((Saltkey & 0xFFFFFFFFul)       < 0x40ul)       Saltkey += 0x40ul;               
 
                 var garbage = Reader.ReadBytes(120 - 16 - 8);
 
@@ -120,44 +119,20 @@ namespace MAS2Extract
             var output = new byte[bf.Length];
 
             if (bf.Length > 0)
-            {
-                uint gigabyteIndex = 0;
-                for (var byteIndex = 0; byteIndex < bf.Length; byteIndex++)
+            {                
+                for (int byteIndex = 0; byteIndex < bf.Length; byteIndex++)
                 {
-                    var ind = (byte)((byteIndex + byteIndex / 256) % 256);
-                    var c = (byte)(byteIndex & 0x3F);
-
-                    var value = ((ulong)FileHeaderKeys[ind]) << c;
-
-                    var valueH = value & 0xFFFFFFFF00000000;
-                    valueH = valueH >> 32;
-                    var valueL= ((ulong)byteIndex) | Saltkey & value;
-                    valueH = gigabyteIndex | Saltkey2 & valueH;
-
-                    value = valueL | valueH << 32;
-
-                    output[byteIndex] = (byte)(bf[byteIndex] ^ DecodeFilesHeaderShiftBytes(value, c));
-
-                    gigabyteIndex = (uint)DecodeFilesHeaderShiftBytes((ulong)byteIndex, 32);
+                    byte ind = (byte)(byteIndex + (byteIndex >> 8));
+                    int shft = byteIndex & 0x3F;
+                    ulong v = ((ulong)FileHeaderKeys[ind]) << shft;
+                    byte value = (byte)((Saltkey & v | (ulong)byteIndex) >> shft);
+                    output[byteIndex] = (byte)(bf[byteIndex] ^ value);
                 }
             }
 
             return output;
-
         }
 
-        /// <summary>
-        /// Helper function for decoding file header.
-        /// </summary>
-        /// <param name="d"></param>
-        /// <param name="s"></param>
-        /// <returns></returns>
-        private static ulong DecodeFilesHeaderShiftBytes(ulong d, byte s)
-        {
-            if (s > 0x40)
-                return 64;
-            return d >> s;
-        }
         #endregion
         #region Constructor
         /// <summary>
@@ -173,29 +148,27 @@ namespace MAS2Extract
 
             Reader = new BinaryReader(System.IO.File.OpenRead(file));
             ReadHeader();
-
-            var files = FileHeader.Length / 256;
-            var filePosition = (uint)Reader.BaseStream.Position;
-
+            var filePosition = (ulong)Reader.BaseStream.Position;
             Reader.Close();
+            
+            // number of files
+            var files = BitConverter.ToUInt64(FileHeader, 4);
+            var headerOffset = 12;
 
-            for (var i = 0; i < files; i++)
+            for (var i = 0; i < (uint)files; i++)
             {
-                var filename = Encoding.ASCII.GetString(FileHeader, i * 256 + 16, 128);
+                var offset = i * 256 + headerOffset;
+                var fileType = BitConverter.ToUInt32(FileHeader, offset);
+                var filename = Encoding.ASCII.GetString(FileHeader, offset + 4, 228);
                 filename = filename.Substring(0, filename.IndexOf('\0'));
 
-                var path = Encoding.ASCII.GetString(FileHeader, i * 256 + 16 + filename.Length + 1, 128);
-                path = path.Substring(0, path.IndexOf('\0'));
+                var dataOffset = BitConverter.ToUInt64(FileHeader, offset + 29 * 8);
+                var sizeUncompressed = BitConverter.ToUInt64(FileHeader, offset + 30 * 8);
+                var sizeCompressed = BitConverter.ToUInt64(FileHeader, offset + 31 * 8);
 
-                var fileIndex = BitConverter.ToUInt32(FileHeader, i * 256);
-                var sizeCompressed = BitConverter.ToUInt32(FileHeader, 65*4 + i * 256);
-                var sizeUncompressed = BitConverter.ToUInt32(FileHeader, 63 * 4 + i * 256);
 
-                var masfile = new MAS2File(fileIndex, filename, path, sizeCompressed, sizeUncompressed,
-                                           filePosition);
-                _files.Add(masfile);
-
-                filePosition += sizeCompressed;
+                var masfile = new MAS2File(fileType, filename, sizeCompressed, sizeUncompressed, filePosition + dataOffset);
+                _files.Add(masfile);                
             }
         }
         #endregion
@@ -214,7 +187,7 @@ namespace MAS2Extract
         public void ExtractFile(MAS2File f, string target)
             {
             var reader = new BinaryReader(System.IO.File.OpenRead(_File));
-            reader.BaseStream.Seek(f.FileOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek((long)f.FileOffset, SeekOrigin.Begin);
             
             var rawData = reader.ReadBytes((int)f.CompressedSize);
 
@@ -247,7 +220,7 @@ namespace MAS2Extract
         public byte[] ExtractBytes(MAS2File f)
         {
             var reader = new BinaryReader(System.IO.File.OpenRead(this._File));
-            reader.BaseStream.Seek(f.FileOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek((long)f.FileOffset, SeekOrigin.Begin);
             var rawData = reader.ReadBytes((int)f.CompressedSize);
             reader.Close();
 
