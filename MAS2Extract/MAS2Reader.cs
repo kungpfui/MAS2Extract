@@ -155,7 +155,7 @@ namespace MAS2Extract
             var files = BitConverter.ToUInt64(FileHeader, 4);
             var headerOffset = 12;
 
-            for (var i = 0; i < (uint)files; i++)
+            for (var i = 0; i < (int)files; i++)
             {
                 var offset = i * 256 + headerOffset;
                 var fileType = BitConverter.ToUInt32(FileHeader, offset);
@@ -167,7 +167,7 @@ namespace MAS2Extract
                 var sizeCompressed = BitConverter.ToUInt64(FileHeader, offset + 31 * 8);
 
 
-                var masfile = new MAS2File(fileType, filename, sizeCompressed, sizeUncompressed, filePosition + dataOffset);
+                var masfile = new MAS2File((uint)i, fileType, filename, sizeCompressed, sizeUncompressed, filePosition + dataOffset);
                 _files.Add(masfile);                
             }
         }

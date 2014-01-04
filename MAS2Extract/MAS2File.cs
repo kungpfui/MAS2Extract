@@ -5,6 +5,20 @@
         /// <summary>
         /// The index the file has inside the mother MAS2 file.
         /// </summary>
+        public uint FileIndex { get; private set; }
+
+        /// <summary>
+        /// The file type (a number) as set by ISI.
+        /// 0  = zero sized file
+        /// 16 = .VEH, .AIW, .CAM, .GDB, .TDF, ... (text files?)
+        /// 17 = .GMT
+        /// 18 = ???
+        /// 19 = .SCN
+        /// 20 = .TGA
+        /// 21 = ???
+        /// 22 = .JPG
+        /// 23 = .DDS                                       
+        /// </summary>
         public uint FileType { get; private set; }
 
         /// <summary>
@@ -34,8 +48,9 @@
         /// </summary>
         public ulong FileOffset { get; private set; }
 
-        public MAS2File(uint filetype, string filename, ulong compressedSize, ulong uncompressedSize, ulong fileOffset)
+        public MAS2File(uint fileindex, uint filetype, string filename, ulong compressedSize, ulong uncompressedSize, ulong fileOffset)
         {
+            FileIndex = FileIndex;
             FileType = filetype;
             Filename = filename;
             CompressedSize = compressedSize;
