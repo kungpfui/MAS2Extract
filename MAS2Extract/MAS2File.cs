@@ -8,16 +8,18 @@
         public uint FileIndex { get; private set; }
 
         /// <summary>
-        /// The file type (a number) as set by ISI.
-        /// 0  = zero sized file
-        /// 16 = .VEH, .AIW, .CAM, .GDB, .TDF, ... (text files?)
-        /// 17 = .GMT
-        /// 18 = ???
-        /// 19 = .SCN
-        /// 20 = .TGA
-        /// 21 = ???
-        /// 22 = .JPG
-        /// 23 = .DDS                                       
+        /// The file type (a number) as set by ISI.        
+        /// 0 = .VEH, .AIW, .CAM, .GDB, .TDF, ... (text files?)
+        /// 1 = .GMT
+        /// 2 = ???
+        /// 3 = .SCN
+        /// 4 = .TGA
+        /// 5 = ???
+        /// 6 = .JPG
+        /// 7 = .DDS
+        /// These types can be or-masked with :
+        ///  0x0010 => ZLIB deflate
+        /// 0x10000 => ISI-selfmade MAS2Codec
         /// </summary>
         public uint FileType { get; private set; }
 

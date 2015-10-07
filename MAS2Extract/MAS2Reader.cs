@@ -185,7 +185,7 @@ namespace MAS2Extract
         #endregion
         #region Extract files in MAS2File
         public void ExtractFile(MAS2File f, string target)
-            {
+        {
             var reader = new BinaryReader(System.IO.File.OpenRead(_File));
             reader.BaseStream.Seek((long)f.FileOffset, SeekOrigin.Begin);
             
@@ -194,21 +194,29 @@ namespace MAS2Extract
             if (f.IsCompressed)
             {
                 var outputData = new byte[f.UncompressedSize];
+                if ((f.FileType & 0x10000) != 0 && rawData[0] >= 0x03 && rawData[0] < 0x20)
+                {
+                    // use/try GMotor2 Decode. The first byte must be also in the range 0x03 ... 0x1F
+                    MAS2Codec.Decode(ref rawData, ref outputData);
+                }
+                else if ((f.FileType & 0x10) != 0)
+                {   // use ZLIB                                                   
 
-                // MAS2 compression consists of a simple inflate/deflate action.
-                var codec = new ZlibCodec(CompressionMode.Decompress);
-                codec.InitializeInflate();
-                codec.InputBuffer = rawData;
-                codec.NextIn = 0;
-                codec.AvailableBytesIn = rawData.Length;
+                    // MAS2 compression consists of a simple inflate/deflate action.
+                    var codec = new ZlibCodec(CompressionMode.Decompress);
+                    codec.InitializeInflate();
+                    codec.InputBuffer = rawData;
+                    codec.NextIn = 0;
+                    codec.AvailableBytesIn = rawData.Length;
 
-                codec.OutputBuffer = outputData;
-                codec.NextOut = 0;
-                codec.AvailableBytesOut = outputData.Length;
+                    codec.OutputBuffer = outputData;
+                    codec.NextOut = 0;
+                    codec.AvailableBytesOut = outputData.Length;
 
-                codec.Inflate(FlushType.None);
-                codec.EndInflate();
-
+                    codec.Inflate(FlushType.None);
+                    codec.EndInflate();
+                    
+                }
                 System.IO.File.WriteAllBytes(target, outputData);
             }
             else
@@ -224,11 +232,20 @@ namespace MAS2Extract
             var rawData = reader.ReadBytes((int)f.CompressedSize);
             reader.Close();
 
-            if (f.IsCompressed)
-            {
-                var outputData = new byte[f.UncompressedSize];
+            if (!f.IsCompressed)  {
+                return rawData;
+            }
+            
+            var outputData = new byte[f.UncompressedSize];
 
-                // MAS2 compression consists of a simple inflate/deflate action.
+            if ((f.FileType & 0x10000) != 0 && rawData[0] >= 0x03 && rawData[0] < 0x20)
+            {
+                // try/use GMotor2 Decode
+                MAS2Codec.Decode(ref rawData, ref outputData);
+            }
+            else if ((f.FileType & 0x10) != 0)
+            {
+                // MAS2 compression consists of a simple Zlib inflate/deflate action.
                 var codec = new ZlibCodec(CompressionMode.Decompress);
                 codec.InitializeInflate();
                 codec.InputBuffer = rawData;
@@ -241,13 +258,12 @@ namespace MAS2Extract
 
                 codec.Inflate(FlushType.None);
                 codec.EndInflate();
-
-                return outputData;
             }
-            else
+            else 
             {
-                return rawData;
+                throw new System.Exception("Unkown encoding");
             }
+            return outputData;            
         }
 
         public string ExtractString(MAS2File f)

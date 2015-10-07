@@ -45,15 +45,15 @@ namespace MAS2Extract
                 Console.WriteLine(reader.Count + " files in archive");
 
                 Console.WriteLine("+{0}+", new string('-', 77));
-                Console.WriteLine("| {0,-34} | {1,-10} | {2,-9} | {3,-6} | {4,-4} |",
+                Console.WriteLine("| {0,-33} | {1,-10} | {2,-9} | {3,-6} | {4,-5} |",
                     "Name", "Compressed", "Raw Size", "Ratio", "Type");
                 Console.WriteLine("+{0}+", new string('-', 77));
 
                 foreach(MAS2File file in reader.Files)
                 {
                     double ratio = (file.UncompressedSize == 0) ? 0.0 : 1.0 - (double)file.CompressedSize / (double)file.UncompressedSize;
-                    Console.Write("| {0,-34} | {1,10} | {2,9} | {3,6:P1} | {4,4} |",
-                        LimitString(file.Filename, 34), file.CompressedSize, file.UncompressedSize, ratio, file.FileType);
+                    Console.Write("| {0,-33} | {1,10} | {2,9} | {3,6:P1} | {4,5} |",
+                        LimitString(file.Filename, 33), file.CompressedSize, file.UncompressedSize, ratio, file.FileType);
                     try
                     {
                         if (unpack)
