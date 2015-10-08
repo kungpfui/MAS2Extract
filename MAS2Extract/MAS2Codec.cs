@@ -1,9 +1,9 @@
 ﻿namespace MAS2Extract
-{            
+{
     /// <summary>
-    /// ISI introduced there own compression algorithm for MAS2-filetype 0x1000.    
+    /// ISI introduced there own compression algorithm for MAS2-filetype 0x1000x.
     /// At the moment the encoder is missing ... but it is not difficult to write one.
-    /// 
+    ///
     /// This code was reversed engineered by reviewing encoded and decoded files.
     /// It was not so diffult to guess what the additional bytes do and the table
     /// could be created by a lot of try and error cycles.
@@ -43,7 +43,7 @@
 		    {30, 0},
             {31, 0},{31, 1},                {31, 4},                                {31, 9},{31,10},
             {32, 0},        {32, 2}
-        };				
+        };
 
 
         /// <summary>
@@ -51,8 +51,8 @@
         /// </summary>
         /// <param name="data">byte string</param>
         /// <param name="uncompressedSize">length to check at the end</param>
-        static public void Decode(ref byte[] data, ref byte[] rawData)
-        {            		   		    
+        static public void Decode(byte[] data, byte[] rawData)
+        {
 		    // count the number of plain characters to read
             uint n = 0;
             // number ob charachters written into @text
@@ -93,12 +93,12 @@
                         // thats a table index, remember it for next time
                         tblIndex = c;
                     }
-                }               
+                }
             }
             if (textPos != rawData.Length)
             {
                 throw new System.Exception(string.Format("Uncompressed size does not match ({0}!={1})", textPos, rawData.Length));
-            }		    
+            }
         }
     }
 }
