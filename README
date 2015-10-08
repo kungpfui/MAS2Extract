@@ -1,4 +1,4 @@
-This utility allows reading the data of rFactor 2 (beta) MAS2 files. rFactor 2 MAS files are secured with a ciphering method. This utility (MAS2Reader.cs) can trace back and do the following:
+This utility allows reading the data of rFactor 2 MAS2 files. rFactor 2 MAS files are secured with a ciphering method. This utility (MAS2Reader.cs) can trace back and do the following:
 
 - Read the file list of a MAS2 file with the filename, the extracted filename path, and it's file size (compressed & uncompressed)
 - Extract uncompressed AND compressed files
@@ -7,8 +7,8 @@ This utility allows reading the data of rFactor 2 (beta) MAS2 files. rFactor 2 M
 
 The console application can show the contents of a MAS file and with a given target path, extract all files.
 
-This code has been tested with the latest released mods as of end October 2012 (the MAS 2.90 format). It is known that 'encrypted' files like shaders.mas cannot be read. As of now I have no interest to research this, as this utility aims to allow automatic reading of game data files such as track AIW paths, car data (engine, tyre data) without manual user interference.
-  
+This code has been tested with the latest released mods as of end October 2015 (the MAS 2.90 format). It is known that 'encrypted' files like shaders.mas cannot be read. As of now I have no interest to research this, as this utility aims to allow automatic reading of game data files such as track AIW paths, car data (engine, tyre data) without manual user interference.
+
 Please feel free to contribute, fork, give feedback, etc. Please see the 'issues' section.
 
 This software is distributed under the GPL v3 license. Please see gpl.txt or <http://www.gnu.org/licenses/> for more information.
